@@ -23,7 +23,11 @@ const DEFAULT_CONFIG = {
  */
 async function newProxy(config = DEFAULT_CONFIG) {
     const response = await api.get('/', { params: _params(config) });
-    return response.data;
+    const proxy = response.data;
+    return {
+        ...proxy,
+        url: `http://${proxy.proxy}`
+    };
 }
 
 function _params(config) {
