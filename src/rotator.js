@@ -8,8 +8,11 @@ const api = Axios.create({
     }
 });
 
+const DEFAULT_CONFIG = {
+    userAgent: true
+};
 
-async function newProxy(config = {}) {
+async function newProxy(config = DEFAULT_CONFIG) {
     const response = await api.get('/', { params: _params(config) });
     console.log(response);
 
