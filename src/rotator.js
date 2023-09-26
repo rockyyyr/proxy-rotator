@@ -1,42 +1,50 @@
-const { PROXY_API_KEY } = process.env;
+const { PROXY_API_USER, PROXY_API_PASS } = process.env;
 
 const Axios = require('axios');
-const ProxyConfig = require('./model/ProxyConfig');
-const Proxy = require('./model/Proxy');
-const api = Axios.create({
-    baseURL: 'http://falcon.proxyrotator.com:51337',
-    params: {
-        apiKey: PROXY_API_KEY
+const HttpsProxyAgent = require('https-proxy-agent');
+
+const rotator = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@gate.smartproxy.com:7000`);
+const sticky = new HttpsProxyAgent(`http://user-${PROXY_API_USER}-sessionduration-1:${PROXY_API_PASS}@gate.smartproxy.com:10000`);
+
+module.exports = class Proxy {
+
+    constructor(config = {}, responseHandler = this._defaultResponseHandler, errorHandler = this._defaultErrorHandler) {
+        this.axios = Axios.create(config);
+        this.axios.interceptors.response(responseHandler, errorHandler);
     }
-});
 
-const DEFAULT_CONFIG = {
-    userAgent: true
-};
+    get(url, options) {
+        return this.axios.get(url, this._createConfig(options));
+    }
 
+    post(url, data, options) {
+        return this.axios.post(url, data, this._createConfig(options));
+    }
 
-/**
- * Get a new Proxy
- * 
- * @param {ProxyConfig} config 
- * @returns {Proxy}
- */
-async function newProxy(config = DEFAULT_CONFIG) {
-    const response = await api.get('/', { params: _params(config) });
-    const proxy = response.data;
-    return {
-        ...proxy,
-        url: `http://${proxy.proxy}`
-    };
-}
+    put(url, data, options) {
+        return this.axios.put(url, data, this._createConfig(options));
+    }
 
-function _params(config) {
-    return {
-        apiKey: PROXY_API_KEY,
-        ...config
+    patch(url, data, options) {
+        return this.axios.patch(url, data, this._createConfig(options));
+    }
+
+    delete(url, data, options) {
+        return this.axios.delete(url, data, this._createConfig(options));
+    }
+
+    _defaultResponseHandler(response) {
+        return response.data;
+    }
+
+    _defaultErrorHandler(error) {
+        return Promise.reject(error);
+    }
+
+    _createConfig(options) {
+        return {
+            ...options,
+            httpsAgent: options.sticky ? sticky : rotator
+        };
     }
 }
-
-module.exports = {
-    newProxy
-};
