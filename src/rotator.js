@@ -10,7 +10,7 @@ module.exports = class Proxy {
 
     constructor(config = {}, responseHandler = this._defaultResponseHandler, errorHandler = this._defaultErrorHandler) {
         this.axios = Axios.create(config);
-        this.axios.interceptors.response(responseHandler, errorHandler);
+        this.axios.interceptors.response.use(responseHandler, errorHandler);
     }
 
     get(url, options) {
