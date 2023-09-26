@@ -13,23 +13,23 @@ module.exports = class Proxy {
         this.axios.interceptors.response.use(responseHandler, errorHandler);
     }
 
-    get(url, options) {
+    get(url, options = {}) {
         return this.axios.get(url, this._createConfig(options));
     }
 
-    post(url, data, options) {
+    post(url, data = {}, options = {}) {
         return this.axios.post(url, data, this._createConfig(options));
     }
 
-    put(url, data, options) {
+    put(url, data = {}, options = {}) {
         return this.axios.put(url, data, this._createConfig(options));
     }
 
-    patch(url, data, options) {
+    patch(url, data = {}, options = {}) {
         return this.axios.patch(url, data, this._createConfig(options));
     }
 
-    delete(url, data, options) {
+    delete(url, data = {}, options = {}) {
         return this.axios.delete(url, data, this._createConfig(options));
     }
 
