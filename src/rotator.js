@@ -2,9 +2,17 @@ const { PROXY_API_USER, PROXY_API_PASS } = process.env;
 
 const Axios = require('axios');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const Useragent = require('random-useragent');
 
-const rotator = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@us.smartproxy.com:10001`);
-const sticky = new HttpsProxyAgent(`http://user-${PROXY_API_USER}-sessionduration-1:${PROXY_API_PASS}@us.smartproxy.com:10000`);
+const rotating = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@us.smartproxy.com:10000`);
+const sticky1 = new HttpsProxyAgent(`http://user-${PROXY_API_USER}-sessionduration-1:${PROXY_API_PASS}@us.smartproxy.com:10001`);
+const sticky10 = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@us.smartproxy.com:10001`);
+const sticky30 = new HttpsProxyAgent(`http://user-${PROXY_API_USER}-sessionduration-30:${PROXY_API_PASS}@us.smartproxy.com:10001`);
+
+const EXCLUDE_BROWSERS = [
+    'Internet Explorer',
+    'Wget'
+];
 
 module.exports = class Proxy {
 
@@ -38,13 +46,30 @@ module.exports = class Proxy {
     }
 
     _defaultErrorHandler(error) {
-        return Promise.reject(error);
+        return Promise.reject(new Error(error));
     }
 
     _createConfig(options) {
-        return {
-            ...options,
-            httpsAgent: options.sticky ? sticky : rotator
+        const defaultConfig = {
+            httpsAgent: options.sticky ? this._getStickyAgent(sticky) : rotating,
+            headers: {
+                'User-Agent': this._getUA()
+            }
         };
+        return Axios.mergeConfig(defaultConfig, options);
+    }
+
+    _getStickyAgent(duration) {
+        switch (duration) {
+            case 1: return sticky1;
+            case 10: return sticky10;
+            case 30: return sticky30;
+            default:
+                throw new Error('Invalid sticky session duration');
+        }
+    }
+
+    _getUA() {
+        return Useragent.getRandom(ua => !EXCLUDE_BROWSERS.includes(ua.browserName));
     }
 }
