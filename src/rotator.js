@@ -4,7 +4,7 @@ const Axios = require('axios');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const Useragent = require('random-useragent');
 
-const rotating = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@us.smartproxy.com:10000`);
+const rotating = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@ua.smartproxy.com:40000`);
 const sticky1 = new HttpsProxyAgent(`http://user-${PROXY_API_USER}-sessionduration-1:${PROXY_API_PASS}@us.smartproxy.com:10001`);
 const sticky10 = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@us.smartproxy.com:10001`);
 const sticky30 = new HttpsProxyAgent(`http://user-${PROXY_API_USER}-sessionduration-30:${PROXY_API_PASS}@us.smartproxy.com:10001`);
@@ -16,33 +16,33 @@ const EXCLUDE_BROWSERS = [
 
 module.exports = class Proxy {
 
-    constructor(config = {}, responseHandler = this._defaultResponseHandler, errorHandler = this._defaultErrorHandler) {
+    constructor(config = {}, retryLimit = 50) {
         this.axios = Axios.create(config);
-        this.axios.interceptors.response.use(responseHandler, errorHandler);
+        this.retryLimit = retryLimit;
     }
 
     get(url, options = {}) {
-        return this.axios.get(url, this._createConfig(options));
+        return this._retry(this.axios.get(url, this._createConfig(options)));
     }
 
     post(url, data = {}, options = {}) {
-        return this.axios.post(url, data, this._createConfig(options));
+        return this._retry(this.axios.post(url, data, this._createConfig(options)));
     }
 
     put(url, data = {}, options = {}) {
-        return this.axios.put(url, data, this._createConfig(options));
+        return this._retry(this.axios.put(url, data, this._createConfig(options)));
     }
 
     patch(url, data = {}, options = {}) {
-        return this.axios.patch(url, data, this._createConfig(options));
+        return this._retry(this.axios.patch(url, data, this._createConfig(options)));
     }
 
     delete(url, data = {}, options = {}) {
-        return this.axios.delete(url, data, this._createConfig(options));
+        return this._retry(this.axios.delete(url, data, this._createConfig(options)));
     }
 
     _defaultResponseHandler(response) {
-        return response.data;
+        return response;
     }
 
     _defaultErrorHandler(error) {
@@ -71,5 +71,29 @@ module.exports = class Proxy {
 
     _getUA() {
         return Useragent.getRandom(ua => !EXCLUDE_BROWSERS.includes(ua.browserName));
+    }
+
+    async _retry(request) {
+        let attempt = 0;
+
+        while (++attempt <= this.retryLimit) {
+            try {
+                console.log('attempt:', attempt);
+
+                const response = await request;
+                return response.data;
+
+            } catch (error) {
+                if (attempt === this.retryLimit) {
+                    return error;
+                }
+
+                if (error?.response?.status === 429) {
+                    continue;
+                } else {
+                    throw error;
+                }
+            }
+        }
     }
 }
