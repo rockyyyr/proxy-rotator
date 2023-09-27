@@ -52,9 +52,9 @@ module.exports = class Proxy {
     _createConfig(options) {
         const defaultConfig = {
             httpsAgent: this._getHttpsAgent(options),
-            headers: {
-                'User-Agent': this._getUA()
-            }
+            // headers: {
+            //     'User-Agent': this._getUA()
+            // }
         };
         return Axios.mergeConfig(defaultConfig, options);
     }
