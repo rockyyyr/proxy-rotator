@@ -79,7 +79,7 @@ module.exports = class Proxy {
     _retryGet(request) {
         return async (url, options) => {
             let attempts = 0;
-            while (++attempt <= this.retryLimit) {
+            while (++attempts <= this.retryLimit) {
                 try {
                     if (attempts > 1) {
                         this.log(`Request attempt: ${attemps}`);
