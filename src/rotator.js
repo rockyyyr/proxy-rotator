@@ -52,9 +52,6 @@ module.exports = class Proxy {
     _createConfig(options) {
         const defaultConfig = {
             httpsAgent: this._getHttpsAgent(options),
-            // headers: {
-            //     'User-Agent': this._getUA()
-            // }
         };
         return Axios.mergeConfig(defaultConfig, options);
     }
@@ -90,7 +87,7 @@ module.exports = class Proxy {
 
                 } catch (error) {
                     if (attempts === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
-                        return error;
+                        throw error;
                     }
                 }
             }
@@ -111,7 +108,7 @@ module.exports = class Proxy {
 
                 } catch (error) {
                     if (attempts === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
-                        return error;
+                        throw error;
                     }
                 }
             }
