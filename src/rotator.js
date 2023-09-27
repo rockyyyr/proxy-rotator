@@ -78,10 +78,9 @@ module.exports = class Proxy {
 
         while (++attempt <= this.retryLimit) {
             try {
-                console.log('attempt:', attempt);
-
+                console.log('request attempt:', attempt);
                 const response = await request;
-                return response.data;
+                return response;
 
             } catch (error) {
                 if (attempt === this.retryLimit) {
