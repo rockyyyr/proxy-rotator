@@ -3,11 +3,7 @@ const { PROXY_API_USER, PROXY_API_PASS } = process.env;
 const Axios = require('axios');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const Useragent = require('random-useragent');
-
-const rotating = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@ua.smartproxy.com:40000`);
-const sticky1 = new HttpsProxyAgent(`http://user-${PROXY_API_USER}-sessionduration-1:${PROXY_API_PASS}@us.smartproxy.com:10001`);
-const sticky10 = new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@us.smartproxy.com:10001`);
-const sticky30 = new HttpsProxyAgent(`http://user-${PROXY_API_USER}-sessionduration-30:${PROXY_API_PASS}@us.smartproxy.com:10001`);
+const Locations = require('./locations');
 
 const EXCLUDE_BROWSERS = [
     'Internet Explorer',
@@ -15,32 +11,34 @@ const EXCLUDE_BROWSERS = [
 ];
 
 const RETRY_RESPONSES = [429, 403, 401];
+const DEFAULT_LOCATION = 'Ukraine';
 
 module.exports = class Proxy {
 
-    constructor(config = {}, retryLimit = 50) {
+    constructor(config = {}, retryLimit = 50, logger = console.log) {
         this.axios = Axios.create(config);
         this.retryLimit = retryLimit;
+        this.log = logger;
     }
 
     get(url, options = {}) {
-        return this._retry(this.axios.get(url, this._createConfig(options)));
+        return this._retryGet(this.axios.get)(url, options);
     }
 
     post(url, data = {}, options = {}) {
-        return this._retry(this.axios.post(url, data, this._createConfig(options)));
+        return this._retry(this.axios.post)(url, data, options);
     }
 
     put(url, data = {}, options = {}) {
-        return this._retry(this.axios.put(url, data, this._createConfig(options)));
+        return this._retry(this.axios.put)(url, data, options);
     }
 
     patch(url, data = {}, options = {}) {
-        return this._retry(this.axios.patch(url, data, this._createConfig(options)));
+        return this._retry(this.axios.patch)(url, data, options);
     }
 
     delete(url, data = {}, options = {}) {
-        return this._retry(this.axios.delete(url, data, this._createConfig(options)));
+        return this._retry(this.axios.delete)(url, data, options);
     }
 
     _defaultResponseHandler(response) {
@@ -53,7 +51,7 @@ module.exports = class Proxy {
 
     _createConfig(options) {
         const defaultConfig = {
-            httpsAgent: options.sticky ? this._getStickyAgent(sticky) : rotating,
+            httpsAgent: this._getHttpsAgent(options),
             headers: {
                 'User-Agent': this._getUA()
             }
@@ -61,32 +59,54 @@ module.exports = class Proxy {
         return Axios.mergeConfig(defaultConfig, options);
     }
 
-    _getStickyAgent(duration) {
-        switch (duration) {
-            case 1: return sticky1;
-            case 10: return sticky10;
-            case 30: return sticky30;
-            default:
-                throw new Error('Invalid sticky session duration');
-        }
+    _getHttpsAgent(options) {
+        const location = this._getLocationConfig(options.location);
+        return new HttpsProxyAgent(`http://${PROXY_API_USER}:${PROXY_API_PASS}@${location.hostname}:${location.port}`);
+    }
+
+    _getLocationConfig(location) {
+        return Locations.find(x => {
+            return location
+                ? x.location.toLowerCase() === location.toLowerCase()
+                : x.location === DEFAULT_LOCATION
+        });
     }
 
     _getUA() {
         return Useragent.getRandom(ua => !EXCLUDE_BROWSERS.includes(ua.browserName));
     }
 
-    async _retry(request) {
-        let attempt = 0;
+    _retryGet(request) {
+        return async (url, options) => {
+            let attempt = 0;
+            while (++attempt <= this.retryLimit) {
+                try {
+                    this.log('request attempt:', attempt);
+                    const response = await request(url, this._createConfig(options));
+                    return response;
 
-        while (++attempt <= this.retryLimit) {
-            try {
-                console.log('request attempt:', attempt);
-                const response = await request;
-                return response;
+                } catch (error) {
+                    if (attempt === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
+                        return error;
+                    }
+                }
+            }
+        }
+    }
 
-            } catch (error) {
-                if (attempt === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
-                    return error;
+    _retry(request) {
+        return async (url, data, options) => {
+            let attempts = 0;
+            while (++attempts <= this.retryLimit) {
+                try {
+                    this.log('request attempt:', attempt);
+                    const response = await request(url, data, this._createConfig(options));
+                    return response;
+
+                } catch (error) {
+                    if (attempts === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
+                        return error;
+                    }
                 }
             }
         }
