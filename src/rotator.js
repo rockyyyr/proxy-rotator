@@ -89,7 +89,7 @@ module.exports = class Proxy {
                     return response;
 
                 } catch (error) {
-                    if (attempt === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
+                    if (attempts === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
                         return error;
                     }
                 }
