@@ -78,10 +78,13 @@ module.exports = class Proxy {
 
     _retryGet(request) {
         return async (url, options) => {
-            let attempt = 0;
+            let attempts = 0;
             while (++attempt <= this.retryLimit) {
                 try {
-                    this.log('request attempt:', attempt);
+                    if (attempts > 1) {
+                        this.log(`Request attempt: ${attemps}`);
+                    }
+
                     const response = await request(url, this._createConfig(options));
                     return response;
 
@@ -99,7 +102,10 @@ module.exports = class Proxy {
             let attempts = 0;
             while (++attempts <= this.retryLimit) {
                 try {
-                    this.log('request attempt:', attempt);
+                    if (attempts > 1) {
+                        this.log(`Request attempt: ${attemps}`);
+                    }
+
                     const response = await request(url, data, this._createConfig(options));
                     return response;
 
