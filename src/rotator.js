@@ -14,6 +14,8 @@ const EXCLUDE_BROWSERS = [
     'Wget'
 ];
 
+const RETRY_RESPONSES = [429, 403, 401];
+
 module.exports = class Proxy {
 
     constructor(config = {}, retryLimit = 50) {
@@ -83,14 +85,8 @@ module.exports = class Proxy {
                 return response;
 
             } catch (error) {
-                if (attempt === this.retryLimit) {
+                if (attempt === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
                     return error;
-                }
-
-                if (error?.response?.status === 429) {
-                    continue;
-                } else {
-                    throw error;
                 }
             }
         }
