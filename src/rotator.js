@@ -87,7 +87,9 @@ module.exports = class Proxy {
 
                 } catch (error) {
                     if (attempts === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
-                        throw error?.response ? error.response : error;
+                        throw error?.response
+                            ? new Error(error.response)
+                            : error;
                     }
                 }
             }
@@ -108,7 +110,9 @@ module.exports = class Proxy {
 
                 } catch (error) {
                     if (attempts === this.retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
-                        throw error?.response ? error.response : error;
+                        throw error?.response
+                            ? new Error(error.response)
+                            : error;
                     }
                 }
             }
