@@ -21,14 +21,14 @@ module.exports = class Proxy {
     #axios;
 
     /**
-     * @type {function}
-     */
-    #log = console.log;
-
-    /**
      * @type {string}
      */
     #location;
+
+    /**
+     * @type {function}
+     */
+    #logger = console.log;
 
     /**
      * @type {number}
@@ -40,7 +40,7 @@ module.exports = class Proxy {
         this.#location = config.location;
 
         if (logger) {
-            this.#log = logger;
+            this.#logger = logger;
         }
 
         if (config.retryLimit) {
@@ -116,6 +116,12 @@ module.exports = class Proxy {
 
     #getUA() {
         return Useragent.getRandom(ua => !EXCLUDE_BROWSERS.includes(ua.browserName));
+    }
+
+    #log(loggable) {
+        if (this.#logger) {
+            this.#logger(loggable);
+        }
     }
 
     #retryGet(request) {

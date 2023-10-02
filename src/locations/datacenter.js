@@ -1,7 +1,7 @@
 module.exports = [
     {
         location: 'Default',
-        hostname: 'us.dc.smartproxy.com',
+        hostname: 'gate.dc.smartproxy.com',
         port: '20000'
     },
     {
@@ -11,7 +11,7 @@ module.exports = [
     },
     {
         location: 'USA',
-        hostname: 'us.dc.smartproxy.com',
+        hostname: 'gate.dc.smartproxy.com',
         port: '20000'
     },
     {
