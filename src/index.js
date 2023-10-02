@@ -1,1 +1,1 @@
-module.exports = require('./rotator');
+module.exports = require('./Proxy');
