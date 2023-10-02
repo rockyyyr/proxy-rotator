@@ -11,7 +11,7 @@ const EXCLUDE_BROWSERS = [
     'Wget'
 ];
 
-const RETRY_RESPONSES = [429, 403, 401];
+const RETRY_RESPONSES = [429, 403, 401, 503];
 
 module.exports = class Proxy {
 
