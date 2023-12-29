@@ -75,6 +75,13 @@ module.exports = class Proxy {
         return this.#retry(this.#axios.delete)(url, data, options);
     }
 
+    setInterceptors(response, error) {
+        this.#axios.interceptors.response.use(
+            response,
+            error
+        );
+    }
+
     getLocationList() {
         return Locations.map(x => x.location);
     }
@@ -95,7 +102,7 @@ module.exports = class Proxy {
         if (options.randomUA) {
             defaultConfig.headers = {
                 'User-Agent': this.#getUA()
-            }
+            };
         }
 
         return Axios.mergeConfig(defaultConfig, options);
@@ -110,7 +117,7 @@ module.exports = class Proxy {
         return Locations.find(x => {
             return location
                 ? x.location.toLowerCase() === location.toLowerCase()
-                : x.location === 'Default'
+                : x.location === 'Default';
         });
     }
 
@@ -138,13 +145,13 @@ module.exports = class Proxy {
 
                 } catch (error) {
                     if (attempts === this.#retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
-                        throw error?.response
+                        throw error && error.response
                             ? error.response
                             : error;
                     }
                 }
             }
-        }
+        };
     }
 
     #retry(request) {
@@ -161,12 +168,12 @@ module.exports = class Proxy {
 
                 } catch (error) {
                     if (attempts === this.#retryLimit || !RETRY_RESPONSES.includes(error?.response?.status)) {
-                        throw error?.response
+                        throw error && error.response
                             ? error.response
                             : error;
                     }
                 }
             }
-        }
+        };
     }
-}
+};
